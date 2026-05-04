@@ -158,12 +158,40 @@ lisp_object* create_arr()
     return new;
 }
 
-lisp_object* create_inside(lisp_object* (*c_func)(lisp_object* args), const char* name)
+lisp_object* create_inside(lisp_object* (*inside_func)(lisp_object* args), const char* name)
 {
-       
+    lisp_object* new = malloc(sizeof(lisp_object));
+    if (new == NULL)
+    {
+        return NULL;
+    }
+    new->type = LISP_FUNC;
+    new->data.func.ftype = FUNC_INSIDE;
+    new->data.func.inside.name = malloc(strlen(name) + 1);
+    if (new->data.func.inside.name == NULL)
+    {
+        return NULL;
+    }
+    strcpy(new->data.func.inside.name, name);
+    new->data.func.inside.inside_func = inside_func;
+    new->point_count = 1;
+    return new;
 }
 
 lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* table)
 {
-    
+    lisp_object* new = malloc(sizeof(lisp_object));
+    if (new == NULL)
+    {
+        return NULL;
+    }
+    new->type = LISP_FUNC;
+    new->data.func.ftype = FUNC_USER;
+    new->data.func.user.args = args;
+    new_point(args);
+    new->data.func.user.body = body;
+    new_point(body);
+    new->data.func.user.table = table;
+    new->point_count = 1;
+    return new;
 }

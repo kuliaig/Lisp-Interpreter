@@ -11,7 +11,7 @@ typedef enum lisp_type
     LISP_BOOL,
     LISP_CONS,
     LISP_ARR,
-    LISP_FUNCTION
+    LISP_FUNC
 } lisp_type;
 
 typedef enum func_type
@@ -62,7 +62,7 @@ typedef struct lisp_object
 
             struct
             {
-                lisp_object* (*c_func)(lisp_object* args);
+                lisp_object* (*inside_func)(lisp_object* args);
                 char* name;
             } inside;
 
