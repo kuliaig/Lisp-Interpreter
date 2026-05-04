@@ -1,5 +1,7 @@
 #include "object.h"
 
+// Hash use the FNV-1a function
+
 typedef struct Node 
 {
     char* name;
