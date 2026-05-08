@@ -1,9 +1,10 @@
-#include "storage.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "hash.h"
 
 // FNV-1a for 32-bit
-static int func_Hash(const char* name)
+static unsigned int func_Hash(const char* name)
 {
 	unsigned int h = 2166136261u;
 	while (*name)
@@ -36,10 +37,11 @@ Hash* create_Hash(Hash* Parent)
 
 int put_Hash(Hash* table, const char* name, lisp_object* obj)
 {
-	if (table->size == table->capacity)
+	if (table->size >= table->capacity)
 	{
 		int new_capacity = table->capacity * 2;
 		Node** new_arr = calloc(new_capacity, sizeof(Node*));
+		printf("1\n");
 		if (new_arr == NULL)
 		{
 			return 0;
@@ -62,9 +64,11 @@ int put_Hash(Hash* table, const char* name, lisp_object* obj)
 		table->arr = new_arr;
 		table->capacity = new_capacity;
 	}
-	int h = func_Hash(name) % table->capacity;
+
+	unsigned int h = func_Hash(name) % table->capacity;
 	Node* cur = table->arr[h];
-	while (cur != NULL)
+	
+	while (cur != NULL && cur->name != NULL)
 	{
 		if (strcmp(cur->name, name) == 0)
 		{

@@ -1,6 +1,7 @@
 #include "parcer.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 static void skip_spaces(const char **p)
 {

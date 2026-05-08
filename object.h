@@ -1,6 +1,7 @@
 #pragma once
 // from hash.h
 typedef struct Hash Hash;
+typedef struct lisp_object lisp_object;
 
 typedef enum lisp_type 
 {
@@ -11,7 +12,8 @@ typedef enum lisp_type
     LISP_BOOL,
     LISP_CONS,
     LISP_ARR,
-    LISP_FUNC
+    LISP_FUNC,
+    LISP_VOID
 } lisp_type;
 
 typedef enum func_type
@@ -111,3 +113,6 @@ lisp_object* create_inside(lisp_object* (*c_func)(lisp_object* args), const char
 
 // create lisp object with type FUNCTION (user)
 lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* table);
+
+// create lisp object with type VOID (needs for empty str)
+lisp_object* create_nil();

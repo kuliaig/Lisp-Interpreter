@@ -195,3 +195,19 @@ lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* tabl
     new->point_count = 1;
     return new;
 }
+
+lisp_object* create_void()
+{
+    static lisp_object* nil = NULL;
+    if (nil == NULL) {
+        nil = malloc(sizeof(lisp_object));
+        if (nil == NULL)
+        {
+            return NULL;
+        }
+        nil->type = LISP_VOID;
+        nil->point_count = 1;
+    }
+    new_point(nil);
+    return nil;
+}

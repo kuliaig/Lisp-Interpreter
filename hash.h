@@ -1,3 +1,4 @@
+#pragma once
 #include "object.h"
 
 // Hash use the FNV-1a function
@@ -20,11 +21,11 @@ typedef struct Hash
 // create new Hash table - environment 
 Hash* create_Hash(Hash* Parent);
 
-// put new lisp_object to hash
-void put_Hash(Hash* table, const char* name, lisp_object* obj);
+// put new lisp_object to hash, return 0 if error
+int put_Hash(Hash* table, const char* name, lisp_object* obj);
 
-// set new value to object from Hash
-void set_Hash(Hash* table, const char* name, lisp_object* obj);
+// set new value to object from Hash, return 0 if error
+int set_Hash(Hash* table, const char* name, lisp_object* obj);
 
 // get lisp_object from hash
 lisp_object* get_Hash(Hash* table, const char* name);

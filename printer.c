@@ -11,7 +11,7 @@ static void print_symb(lisp_object* obj)
     printf("%s", obj->data.str.chars);
 }
 
-static void print_nil(lisp_object* obj)
+static void print_nil()
 {
     printf("()");
 }
@@ -74,6 +74,18 @@ static void print_str(lisp_object* obj)
     printf("\"%s\"", obj->data.str.chars);
 }
 
+static void print_func(lisp_object* obj)
+{
+    if (obj->data.func.ftype == FUNC_INSIDE)
+    {
+        printf("#<procedure:%s>", obj->data.func.inside.name);
+    }
+    else
+    {
+        printf("#<procedure>");
+    }
+}
+
 void print_object(lisp_object* obj)
 {
     switch (obj->type)
@@ -91,7 +103,7 @@ void print_object(lisp_object* obj)
         break;
     
     case LISP_NIL:
-        print_nil(obj);
+        print_nil();
         break;
     
     case LISP_BOOL:
@@ -104,6 +116,13 @@ void print_object(lisp_object* obj)
     
     case LISP_ARR:
         print_arr(obj);
+        break;
+
+    case LISP_FUNC:
+        print_func(obj);
+        break;
+
+    case LISP_VOID:
         break;
     }
 }
