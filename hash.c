@@ -41,7 +41,6 @@ int put_Hash(Hash* table, const char* name, lisp_object* obj)
 	{
 		int new_capacity = table->capacity * 2;
 		Node** new_arr = calloc(new_capacity, sizeof(Node*));
-		printf("1\n");
 		if (new_arr == NULL)
 		{
 			return 0;

@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MAX_DEPTH 5000
+
 static lisp_object* cons_sec(lisp_object* cons)
 {
     if (cons == NULL || cons->type != LISP_CONS)
@@ -187,7 +189,7 @@ static lisp_object* define_func(lisp_object* func, lisp_object* value, lisp_obje
     lisp_object* params = func->data.cons.cdr;
     lisp_object* lam = create_user(params, value, table);
 
-    int res = put_Hash(table, f->data.str.chars, value);
+    int res = put_Hash(table, f->data.str.chars, lam);
     if (res == 0)
     {
         fprintf(stderr, "ERROR: not enough memory to define new function :(\n");
@@ -303,6 +305,13 @@ static lisp_object* call_func(lisp_object* func, lisp_object* args, Hash* table)
         a = a->data.cons.cdr;
     }
 
+    if ((p != NULL && p->type != LISP_NIL) || (a != NULL && a->type != LISP_NIL))
+    {
+        fprintf(stderr, "ERROR: wrong number of arguments :(\n");
+        del_Hash(new_table);
+        return NULL;
+    }
+
     lisp_object* res = eval(body, new_table);
     del_Hash(new_table);
     return res;
@@ -310,17 +319,28 @@ static lisp_object* call_func(lisp_object* func, lisp_object* args, Hash* table)
 
 lisp_object* eval(lisp_object* expr, Hash* table)
 {
+    static int depth = 0;
+    depth++;
+    if (depth > MAX_DEPTH)
+    {
+        depth--;
+        fprintf(stderr, "ERROR: sorry, recursion is too deep :(\n");
+        return NULL;
+    }
+
+    lisp_object* res;
+
 	switch (expr->type)
 	{
         case LISP_SYMB:
         {
-            lisp_object* value = get_Hash(table, expr->data.str.chars);
-            if (value == NULL)
+            res = get_Hash(table, expr->data.str.chars);
+            if (res == NULL)
             {
                 fprintf(stderr, "ERROR: %s is not defined :(\n", expr->data.str.chars);
-                return NULL;
+                break;
             }
-            return value;
+            break;
         }
 
         case LISP_CONS:
@@ -330,7 +350,8 @@ lisp_object* eval(lisp_object* expr, Hash* table)
             if (oper == NULL || oper->type != LISP_SYMB)
             {
                 fprintf(stderr, "ERROR: not a procedure :(\n");
-                return NULL;
+                res = NULL;
+                break;
             }
 
             lisp_object* func = get_Hash(table, oper->data.str.chars);
@@ -339,22 +360,26 @@ lisp_object* eval(lisp_object* expr, Hash* table)
             {
                 if (func->type == LISP_FUNC)
                 {
-                    return call_func(func, expr->data.cons.cdr, table);
+                    res = call_func(func, expr->data.cons.cdr, table);
+                    break;
                 }
                 else
                 {
                     fprintf(stderr, "ERROR: not a procedure :(\n");
-                    return NULL;
+                    res = NULL;
+                    break;
                 }
             }
 
             if (strcmp(oper->data.str.chars, "quote") == 0)
             {
-                return quote(expr->data.cons.cdr);
+                res = quote(expr->data.cons.cdr);
+                break;
             }
             else if (strcmp(oper->data.str.chars, "if") == 0)
             {
-                return ifelse(expr->data.cons.cdr, table);
+                res = ifelse(expr->data.cons.cdr, table);
+                break;
             }
             else if (strcmp(oper->data.str.chars, "define") == 0)
             {
@@ -366,21 +391,25 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                 if (first != NULL && first->type == LISP_SYMB)
                 {
                     lisp_object* value = eval(val_expr, table);
-                    return define_var(first, value, third, table);
+                    res = define_var(first, value, third, table);
+                    break;
                 }
                 else if (first != NULL && first->type == LISP_CONS)
                 {
-                    return define_func(first, val_expr, third, table);
+                    res = define_func(first, val_expr, third, table);
+                    break;
                 }
                 else
                 {
                     fprintf(stderr, "ERROR: bad syntax in define :(\n");
-                    return NULL;
+                    res = NULL;
+                    break;
                 }
             }
             else if (strcmp(oper->data.str.chars, "lambda") == 0)
             {
-                return lambda(expr->data.cons.cdr, table);
+                res = lambda(expr->data.cons.cdr, table);
+                break;
             }
             else if (strcmp(oper->data.str.chars, "set!") == 0)
             {
@@ -389,14 +418,21 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                 lisp_object* val_expr = cons_sec(args);
                 lisp_object* third = cons_third(args);
                 lisp_object* value = eval(val_expr, table);
-                return set(args->data.cons.car, value, third, table);
+                res = set(args->data.cons.car, value, third, table);
+                break;
             }
 
             fprintf(stderr, "ERROR: no such operation defined yet :(\n");
-            return NULL;
+            res = NULL;
+            break;
         }
-
-	    default:
-		    return expr;
+        default:
+        {
+            res = expr;
+            break;
+        }
 	}
+
+    depth--;
+    return res;
 }

@@ -1,13 +1,17 @@
-#include <stdi-o.h>
+#include <stdio.h>
 #include "object.h"
 #include "parcer.h"
 #include "printer.h"
 #include "hash.h"
 #include "eval.h"
+#include "func.h"
 
 int main()
 {
     Hash* table = create_Hash(NULL);
+
+    module_math(table);
+    module_cons(table);
 
     char input[1024];
 
@@ -18,10 +22,13 @@ int main()
         if (obj)
         {
             lisp_object* res = eval(obj, table);
-            if (res != NULL && res->type != LISP_VOID)
+            if (res != NULL)
             {
-                print_object(res);
-                printf("\n");
+                if (res->type != LISP_VOID)
+                {
+                    print_object(res);
+                    printf("\n");
+                }
                 del_point(res);
             }
             del_point(obj);
@@ -29,5 +36,5 @@ int main()
     }
 
     del_Hash(table);
-    return 0;+
+    return 0;
 }
