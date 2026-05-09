@@ -35,6 +35,19 @@ void del_point(lisp_object* obj)
                 }
                 free(obj->data.arr.elements);
         }
+        else if (obj->type == LISP_FUNC)
+        {
+            if (obj->data.func.ftype == FUNC_INSIDE)
+            {
+                free(obj->data.func.inside.name);
+            }
+            else if (obj->data.func.ftype == FUNC_USER)
+            {
+                del_point(obj->data.func.user.args);
+                del_point(obj->data.func.user.body);
+                del_point_Hash(obj->data.func.user.table);
+            }
+        }
 
         free(obj);
     }
@@ -193,6 +206,7 @@ lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* tabl
     new_point(body);
     new->data.func.user.table = table;
     new->point_count = 1;
+    new_point_Hash(table);
     return new;
 }
 

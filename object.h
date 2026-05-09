@@ -2,6 +2,7 @@
 // from hash.h
 typedef struct Hash Hash;
 typedef struct lisp_object lisp_object;
+void new_point_Hash(Hash* table);
 
 typedef enum lisp_type 
 {

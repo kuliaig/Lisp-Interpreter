@@ -5,6 +5,7 @@
 
 static lisp_object* plus(lisp_object* args)
 {
+	printf("+\n");
 	long long res = 0;
 	lisp_object* cur = args;
 	
@@ -257,7 +258,7 @@ static lisp_object* great(lisp_object* args)
 			return NULL;
 		}
 
-		if (value->data.num_val <= prev)
+		if (value->data.num_val >= prev)
 		{
 			res = 0;
 		}
@@ -302,7 +303,7 @@ static lisp_object* great_eq(lisp_object* args)
 			return NULL;
 		}
 
-		if (value->data.num_val < prev)
+		if (value->data.num_val > prev)
 		{
 			res = 0;
 		}
@@ -347,7 +348,7 @@ static lisp_object* less(lisp_object* args)
 			return NULL;
 		}
 
-		if (value->data.num_val >= prev)
+		if (value->data.num_val <= prev)
 		{
 			res = 0;
 		}
@@ -392,7 +393,7 @@ static lisp_object* less_eq(lisp_object* args)
 			return NULL;
 		}
 
-		if (value->data.num_val > prev)
+		if (value->data.num_val < prev)
 		{
 			res = 0;
 		}

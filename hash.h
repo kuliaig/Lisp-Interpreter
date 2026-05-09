@@ -16,6 +16,7 @@ typedef struct Hash
     int size;
     int capacity;
     struct Hash* parent;
+    int point_count;
 } Hash;
 
 // create new Hash table - environment 
@@ -32,3 +33,9 @@ lisp_object* get_Hash(Hash* table, const char* name);
 
 // delete Hash table
 void del_Hash(Hash* table);
+
+// create new point for table
+void new_point_Hash(Hash* table);
+
+// delete point of table (if count_points == 0 delete table)
+void del_point_Hash(Hash* table);

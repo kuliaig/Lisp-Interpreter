@@ -29,6 +29,7 @@ Hash* create_Hash(Hash* Parent)
 		free(table);
 		return NULL;
 	}
+	table->point_count = 1;
 	table->size = 0;
 	table->capacity = 8;
 	table->parent = Parent;
@@ -162,4 +163,38 @@ void del_Hash(Hash* table)
 	}
 	free(table->arr);
 	free(table);
+}
+
+void new_point_Hash(Hash* table)
+{
+	if (table != NULL)
+	{
+		table->point_count++;
+	}
+}
+
+void del_point_Hash(Hash* table)
+{
+	if (table == NULL)
+	{
+		return;
+	}
+	table->point_count--;
+	if (table->point_count <= 0)
+	{
+		for (int i = 0; i < table->capacity; i++)
+		{
+			Node* cur = table->arr[i];
+			while (cur != NULL)
+			{
+				Node* next = cur->next;
+				del_point(cur->value);
+				free(cur->name);
+				free(cur);
+				cur = next;
+			}
+		}
+		free(table->arr);
+		free(table);
+	}
 }
