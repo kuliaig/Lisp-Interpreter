@@ -4,6 +4,72 @@
 
 #define MAX_DEPTH 5000
 
+// function for memo-Hash
+static char* args_to_string(lisp_object* args)
+{
+    size_t size = 256;
+    size_t len = 0;
+    char* buf = malloc(size);
+    if (buf == NULL) return NULL;
+    buf[0] = '\0';
+
+    lisp_object* cur = args;
+    while (cur != NULL && cur->type == LISP_CONS)
+    {
+        lisp_object* val = cur->data.cons.car;
+        char* tmp = NULL;
+        size_t needed = 0;
+
+        if (val->type == LISP_NUM)
+        {
+            needed = snprintf(NULL, 0, "%lld ", val->data.num_val) + 1;
+            tmp = malloc(needed);
+            if (tmp) snprintf(tmp, needed, "%lld ", val->data.num_val);
+        }
+        else if (val->type == LISP_SYMB)
+        {
+            needed = snprintf(NULL, 0, "%s ", val->data.str.chars) + 1;
+            tmp = malloc(needed);
+            if (tmp) snprintf(tmp, needed, "%s ", val->data.str.chars);
+        }
+        else if (val->type == LISP_NIL)
+        {
+            tmp = strdup("() ");
+        }
+        else if (val->type == LISP_BOOL)
+        {
+            tmp = strdup(val->data.bool_val ? "#t " : "#f ");
+        }
+        else
+        {
+            needed = snprintf(NULL, 0, "%p ", (void*)val) + 1;
+            tmp = malloc(needed);
+            if (tmp) snprintf(tmp, needed, "%p ", (void*)val);
+        }
+
+        if (tmp == NULL) 
+        { 
+            free(buf); 
+            return NULL; 
+        }
+
+        size_t tmp_len = strlen(tmp);
+        while (len + tmp_len + 1 > size)
+        {
+            size *= 2;
+            char* new_buf = realloc(buf, size);
+            if (new_buf == NULL) { free(buf); free(tmp); return NULL; }
+            buf = new_buf;
+        }
+
+        strcat(buf, tmp);
+        len += tmp_len;
+        free(tmp);
+        cur = cur->data.cons.cdr;
+    }
+    return buf;
+}
+
 static lisp_object* cons_sec(lisp_object* cons)
 {
     if (cons == NULL || cons->type != LISP_CONS)
@@ -150,9 +216,9 @@ static lisp_object* define_var(lisp_object* var, lisp_object* value, lisp_object
     return create_void();
 }
 
-static lisp_object* define_func(lisp_object* func, lisp_object* value, lisp_object* third, Hash* table)
+static lisp_object* define_func(lisp_object* func, lisp_object* value, Hash* table, int ismemo)
 {
-    if (func == NULL || value == NULL || third != NULL)
+    if (func == NULL || value == NULL)
     {
         fprintf(stderr, "ERROR: bad syntax, define takes 2 arguments :(\n");
         return NULL;
@@ -188,7 +254,7 @@ static lisp_object* define_func(lisp_object* func, lisp_object* value, lisp_obje
     }
 
     lisp_object* params = func->data.cons.cdr;
-    lisp_object* lam = create_user(params, value, table);
+    lisp_object* lam = create_user(params, value, table, ismemo);
     if (lam == NULL)
     {
         fprintf(stderr, "ERROR: not enough memory to define new function :(\n");
@@ -204,7 +270,7 @@ static lisp_object* define_func(lisp_object* func, lisp_object* value, lisp_obje
     return create_void();
 }
 
-static lisp_object* lambda(lisp_object* args, Hash* table)
+static lisp_object* lambda(lisp_object* args, Hash* table, int ismemo)
 {
     if (args == NULL || args->type != LISP_CONS)
     {
@@ -249,7 +315,7 @@ static lisp_object* lambda(lisp_object* args, Hash* table)
         return NULL;
     }
 
-    return create_user(params, body, table);
+    return create_user(params, body, table, ismemo);
 }
 
 static lisp_object* set(lisp_object* var, lisp_object* value, lisp_object* third, Hash* table)
@@ -299,12 +365,15 @@ static lisp_object* eval_args(lisp_object* args, Hash* table)
 
 static lisp_object* call_func(lisp_object* func, lisp_object* args, Hash* table)
 {
+    if (func == NULL)
+    {
+        fprintf(stderr, "ERROR: function is NULL :(\n");
+    }
     lisp_object* ev = eval_args(args, table);
     if (ev == NULL)
     {
         return NULL;
     }
-
     if (func->data.func.ftype == FUNC_INSIDE)
     {
         return func->data.func.inside.inside_func(ev);
@@ -330,27 +399,88 @@ static lisp_object* call_func(lisp_object* func, lisp_object* args, Hash* table)
         return NULL;
     }
 
+    char* key = NULL;
+    if (func->data.func.user.ismemo)
+    {
+        key = args_to_string(ev);
+        lisp_object* cached = get_Hash(func->data.func.user.memo, key_copy);
+        if (cached != NULL)
+        {
+            free(key);
+            del_point_Hash(new_table);
+            return cached;
+        }
+    }
+
     lisp_object* res = NULL;
     lisp_object* cur = body;
-
+    
     if (body->type == LISP_CONS && body->data.cons.car->type == LISP_SYMB)
     {
         res = eval(body, new_table);
     }
     else
     {
-        lisp_object* cur = body;
         while (cur != NULL && cur->type == LISP_CONS)
         {
             res = eval(cur->data.cons.car, new_table);
             if (res == NULL)
             {
+                del_point_Hash(new_table);
+                free(key);
                 return NULL;
             }
             cur = cur->data.cons.cdr;
         }
     }
+
+    if (func->data.func.user.ismemo && res != NULL)
+    {
+        int r = put_Hash(func->data.func.user.memo, key_copy, res);
+        if (r == 0)
+        {
+            fprintf(stderr, "ERROR: not enough memory to do memoization :(\n");
+        }
+    }
+    free(key);
+
     del_point_Hash(new_table);
+    return res;
+}
+
+static lisp_object* case_and(lisp_object* args, Hash* table)
+{
+    lisp_object* cur = args;
+    lisp_object* res = create_bool(1);
+
+    while (cur != NULL && cur->type == LISP_CONS)
+    {
+        res = eval(cur->data.cons.car, table);
+        if (res == NULL) return NULL;
+
+        if (res->type == LISP_BOOL && res->data.bool_val == 0)
+            return create_bool(0);
+
+        cur = cur->data.cons.cdr;
+    }
+    return res;
+}
+
+static lisp_object* case_or(lisp_object* args, Hash* table)
+{
+    lisp_object* cur = args;
+    lisp_object* res = create_bool(0);
+
+    while (cur != NULL && cur->type == LISP_CONS)
+    {
+        res = eval(cur->data.cons.car, table);
+        if (res == NULL) return NULL;
+
+        if (!(res->type == LISP_BOOL && res->data.bool_val == 0))
+            return res;
+
+        cur = cur->data.cons.cdr;
+    }
     return res;
 }
 
@@ -362,6 +492,12 @@ lisp_object* eval(lisp_object* expr, Hash* table)
     {
         depth--;
         fprintf(stderr, "ERROR: sorry, recursion is too deep :(\n");
+        return NULL;
+    }
+
+    if (expr == NULL || table == NULL)
+    {
+        fprintf(stderr, "ERROR IN EVAL\n");
         return NULL;
     }
 
@@ -437,7 +573,8 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                     }
                     else if (first != NULL && first->type == LISP_CONS)
                     {
-                        res = define_func(first, val_expr, third, table);
+                        lisp_object* val_expr = args->data.cons.cdr;
+                        res = define_func(first, val_expr, table, 1);
                         break;
                     }
                     else
@@ -447,9 +584,34 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                         break;
                     }
                 }
+                else if (strcmp(oper->data.str.chars, "define-no-mem") == 0)
+                {
+                    lisp_object* args = expr->data.cons.cdr;
+                    lisp_object* first = args->data.cons.car;
+                    lisp_object* val_expr = cons_sec(args);
+                    lisp_object* third = cons_third(args);
+
+                    if (first != NULL && first->type == LISP_CONS)
+                    {
+                        lisp_object* val_expr = args->data.cons.cdr;
+                        res = define_func(first, val_expr, table, 0);
+                        break;
+                    }
+                    else
+                    {
+                        fprintf(stderr, "ERROR: bad syntax in define-no-mem :(\n");
+                        res = NULL;
+                        break;
+                    }
+                }
                 else if (strcmp(oper->data.str.chars, "lambda") == 0)
                 {
-                    res = lambda(expr->data.cons.cdr, table);
+                    res = lambda(expr->data.cons.cdr, table, 1);
+                    break;
+                }
+                else if (strcmp(oper->data.str.chars, "lambda-no-mem") == 0)
+                {
+                    res = lambda(expr->data.cons.cdr, table, 0);
                     break;
                 }
                 else if (strcmp(oper->data.str.chars, "set!") == 0)
@@ -465,6 +627,16 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                         break;
                     }
                     res = set(args->data.cons.car, value, third, table);
+                    break;
+                }
+                else if (strcmp(oper->data.str.chars, "and") == 0)
+                {
+                    res = case_and(expr->data.cons.cdr, table);
+                    break;
+                }
+                else if (strcmp(oper->data.str.chars, "or") == 0)
+                {
+                    res = case_or(expr->data.cons.cdr, table);
                     break;
                 }
             }

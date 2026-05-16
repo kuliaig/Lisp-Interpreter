@@ -38,6 +38,10 @@ Hash* create_Hash(Hash* Parent)
 
 int put_Hash(Hash* table, const char* name, lisp_object* obj)
 {
+	if (table == NULL || name == NULL || obj == NULL)
+	{
+		return 0;
+	}
 	if (table->size >= table->capacity)
 	{
 		int new_capacity = table->capacity * 2;
@@ -102,12 +106,16 @@ int put_Hash(Hash* table, const char* name, lisp_object* obj)
 
 int set_Hash(Hash* table, const char* name, lisp_object* obj)
 {
+	if (table == NULL || name == NULL || obj == NULL)
+	{
+		return 0;
+	}
 	int h = func_Hash(name) % table->capacity;
 	Node* cur = table->arr[h];
 
 	while (cur != NULL)
 	{
-		if (strcmp(cur->name, name) == 0)
+		if (cur->name != NULL && strcmp(cur->name, name) == 0)
 		{
 			del_point(cur->value);
 			cur->value = obj;
@@ -127,12 +135,16 @@ int set_Hash(Hash* table, const char* name, lisp_object* obj)
 
 lisp_object* get_Hash(Hash* table, const char* name)
 {
+	if (table == NULL || name == NULL)
+	{
+		return NULL;
+	}
 	int h = func_Hash(name) % table->capacity;
 	Node* cur = table->arr[h];
 
 	while (cur != NULL)
 	{
-		if (strcmp(cur->name, name) == 0)
+		if (cur->name != NULL && strcmp(cur->name, name) == 0)
 		{
 			return cur->value;
 		}
@@ -148,6 +160,10 @@ lisp_object* get_Hash(Hash* table, const char* name)
 
 void del_Hash(Hash* table)
 {
+	if (table == NULL)
+	{
+		return;
+	}
 	for (int i = 0; i < table->capacity; i++)
 	{
 		Node* cur = table->arr[i];

@@ -43,6 +43,7 @@ void del_point(lisp_object* obj)
             }
             else if (obj->data.func.ftype == FUNC_USER)
             {
+                del_point_Hash(obj->data.func.user.memo); 
                 del_point(obj->data.func.user.args);
                 del_point(obj->data.func.user.body);
                 del_point_Hash(obj->data.func.user.table);
@@ -183,15 +184,17 @@ lisp_object* create_inside(lisp_object* (*inside_func)(lisp_object* args), const
     new->data.func.inside.name = malloc(strlen(name) + 1);
     if (new->data.func.inside.name == NULL)
     {
+        free(new);
         return NULL;
     }
     strcpy(new->data.func.inside.name, name);
     new->data.func.inside.inside_func = inside_func;
     new->point_count = 1;
+
     return new;
 }
 
-lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* table)
+lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* table, int ismemo)
 {
     lisp_object* new = malloc(sizeof(lisp_object));
     if (new == NULL)
@@ -207,6 +210,24 @@ lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* tabl
     new->data.func.user.table = table;
     new->point_count = 1;
     new_point_Hash(table);
+    new->data.func.user.ismemo = ismemo;
+    if (ismemo)
+    {
+        new->data.func.user.memo = create_Hash(NULL);
+        if (new->data.func.user.memo == NULL)
+        {
+            del_point(args);
+            del_point(body);
+            del_point_Hash(table);
+            free(new);
+            return NULL;
+        }
+    }
+    else
+    {
+        new->data.func.user.ismemo = 0;
+        new->data.func.user.memo = NULL;
+    }
     return new;
 }
 

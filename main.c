@@ -6,12 +6,24 @@
 #include "eval.h"
 #include "func.h"
 
-int main()
+int main(int argc, char** argv)
 {
+    if (argc >= 2)
+    {
+        if (strcmp(argv[1], "--help") == 0)
+        {
+            printf("Usage: lisp.exe [options] file...\n");
+            printf("Options:\n");
+            printf("  --help  Display this information");
+            printf("  --help  Display this information"); // CHANGE WHEN FILE
+            return 0;
+        }
+    }
     Hash* table = create_Hash(NULL);
 
     module_math(table);
     module_cons(table);
+    module_check(table);
 
     char input[1024];
 
@@ -35,6 +47,6 @@ int main()
         }
     }
 
-    del_Hash(table);
+    del_point_Hash(table);
     return 0;
 }

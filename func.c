@@ -3,9 +3,35 @@
 #include <stdio.h>
 #include <limits.h>
 
+static lisp_object* not(lisp_object* args)
+{
+	if (args == NULL || args->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: not expect 1 argument :(\n");
+		return NULL;
+	}
+
+	lisp_object* first = args->data.cons.car;
+	lisp_object* rest = args->data.cons.cdr;
+
+	if (first == NULL || (rest != NULL && rest->type != LISP_NIL))
+	{
+		fprintf(stderr, "ERROR: not expect 1 argument :(\n");
+		return NULL;
+	}
+
+	if (first->type == LISP_BOOL && first->data.bool_val == 0)
+	{
+		return create_bool(1);
+	}
+	else
+	{
+		return create_bool(0);
+	}
+}
+
 static lisp_object* plus(lisp_object* args)
 {
-	printf("+\n");
 	long long res = 0;
 	lisp_object* cur = args;
 	
@@ -416,6 +442,7 @@ void module_math(Hash* table)
 	put_Hash(table, ">=", create_inside(great_eq, ">="));
 	put_Hash(table, "<", create_inside(less, "<"));
 	put_Hash(table, "<=", create_inside(less_eq, "<="));
+	put_Hash(table, "not", create_inside(not, "not"));
 }
 
 static lisp_object* car(lisp_object* args)
@@ -472,10 +499,18 @@ static lisp_object* cdr(lisp_object* args)
 static lisp_object* cons(lisp_object* args)
 {
 	lisp_object* first = args->data.cons.car;
-	lisp_object* second = args->data.cons.cdr->data.cons.car;
-	lisp_object* third = second ? args->data.cons.cdr->data.cons.cdr->data.cons.car : NULL;
+	lisp_object* rest = args->data.cons.cdr;
 
-	if (first == NULL || second == NULL || third != NULL)
+	if (first == NULL || rest == NULL || rest->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: cons expects 2 arguments :(\n");
+		return NULL;
+	}
+
+	lisp_object* second = rest->data.cons.car;
+	lisp_object* third = rest->data.cons.cdr;
+
+	if (second == NULL || (third != NULL && third->type != LISP_NIL))
 	{
 		fprintf(stderr, "ERROR: cons expects 2 arguments :(\n");
 		return NULL;
@@ -625,4 +660,187 @@ void module_cons(Hash* table)
 	put_Hash(table, "cdar", create_inside(cdar, "cdar"));
 	put_Hash(table, "caar", create_inside(caar, "caar"));
 	put_Hash(table, "cddr", create_inside(cddr, "cddr"));
+}
+
+static lisp_object* check_list(lisp_object* args)
+{
+	if (args == NULL || args->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: list? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	lisp_object* arg = args->data.cons.car;
+	lisp_object* rest = args->data.cons.cdr;
+
+	if (arg == NULL || (rest != NULL && rest->type != LISP_NIL))
+	{
+		fprintf(stderr, "ERROR: list? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	int res = 1;
+	while (arg != NULL && arg->type == LISP_CONS)
+	{
+		arg = arg->data.cons.cdr;
+	}
+
+	return create_bool(arg->type == LISP_NIL ? 1 : 0);
+}
+
+static lisp_object* check_zero(lisp_object* args)
+{
+	if (args == NULL || args->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: zero? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	lisp_object* arg = args->data.cons.car;
+	lisp_object* rest = args->data.cons.cdr;
+
+	if (arg == NULL || (rest != NULL && rest->type != LISP_NIL))
+	{
+		fprintf(stderr, "ERROR: zero? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	if (arg->type != LISP_NUM || arg->data.num_val != 0)
+	{
+		return create_bool(0);
+	}
+	else
+	{
+		return create_bool(1);
+	}
+}
+
+static lisp_object* check_pos(lisp_object* args)
+{
+	if (args == NULL || args->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: pozitive? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	lisp_object* arg = args->data.cons.car;
+	lisp_object* rest = args->data.cons.cdr;
+
+	if (arg == NULL || (rest != NULL && rest->type != LISP_NIL))
+	{
+		fprintf(stderr, "ERROR: pozitive? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	if (arg->type != LISP_NUM || arg->data.num_val <= 0)
+	{
+		return create_bool(0);
+	}
+	else
+	{
+		return create_bool(1);
+	}
+}
+
+static lisp_object* check_neg(lisp_object* args)
+{
+	if (args == NULL || args->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: negative? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	lisp_object* arg = args->data.cons.car;
+	lisp_object* rest = args->data.cons.cdr;
+
+	if (arg == NULL || (rest != NULL && rest->type != LISP_NIL))
+	{
+		fprintf(stderr, "ERROR: negative? expect 1 argument :(\n");
+		return NULL;
+	}
+
+	if (arg->type != LISP_NUM || arg->data.num_val >= 0)
+	{
+		return create_bool(0);
+	}
+	else
+	{
+		return create_bool(1);
+	}
+}
+
+static lisp_object* check_type(lisp_object* args, lisp_type type, const char* name)
+{
+	if (args == NULL || args->type != LISP_CONS)
+	{
+		fprintf(stderr, "ERROR: %s expect 1 argument :(\n", name);
+		return NULL;
+	}
+
+	lisp_object* arg = args->data.cons.car;
+	lisp_object* rest = args->data.cons.cdr;
+
+	if (arg == NULL || (rest != NULL && rest->type != LISP_NIL))
+	{
+		fprintf(stderr, "ERROR: %s expect 1 argument :(\n", name);
+		return NULL;
+	}
+
+	return create_bool(arg->type == type ? 1 : 0);
+}
+
+static lisp_object* check_null(lisp_object* args) 
+{ 
+	return check_type(args, LISP_NIL, "null?"); 
+}
+
+static lisp_object* check_pair(lisp_object* args) 
+{ 
+	return check_type(args, LISP_CONS, "pair?"); 
+}
+
+static lisp_object* check_num(lisp_object* args) 
+{	
+	return check_type(args, LISP_NUM, "number?"); 
+}
+
+static lisp_object* check_symb(lisp_object* args) 
+{ 
+	return check_type(args, LISP_SYMB, "symbol?"); 
+}
+
+static lisp_object* check_bool(lisp_object* args) 
+{ 
+	return check_type(args, LISP_BOOL, "boolean?"); 
+}
+
+static lisp_object* check_str(lisp_object* args) 
+{ 
+	return check_type(args, LISP_STR, "string?");
+}
+
+static lisp_object* check_proc(lisp_object* args) 
+{ 
+	return check_type(args, LISP_FUNC, "procedure?"); 
+}
+
+static lisp_object* check_vec(lisp_object* args) 
+{ 
+	return check_type(args, LISP_ARR, "vector?"); 
+}
+
+void module_check(Hash* table)
+{
+	put_Hash(table, "list?", create_inside(check_list, "list?"));
+	put_Hash(table, "zero?", create_inside(check_zero, "zero?"));
+	put_Hash(table, "positive?", create_inside(check_pos, "positive?"));
+	put_Hash(table, "negative?", create_inside(check_neg, "negative?"));
+	put_Hash(table, "null?", create_inside(check_null, "null?"));
+	put_Hash(table, "string?", create_inside(check_str, "string?"));
+	put_Hash(table, "number?", create_inside(check_num, "number?"));
+	put_Hash(table, "procedure?", create_inside(check_proc, "procedure?"));
+	put_Hash(table, "vector?", create_inside(check_vec, "vector?"));
+	put_Hash(table, "pair?", create_inside(check_pair, "pair?"));
+	put_Hash(table, "boolean?", create_inside(check_bool, "boolean?"));
+	put_Hash(table, "symbol?", create_inside(check_symb, "symbol?"));
 }
