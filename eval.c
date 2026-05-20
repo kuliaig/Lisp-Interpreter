@@ -1,6 +1,7 @@
 #include "eval.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_DEPTH 5000
 
@@ -24,13 +25,19 @@ static char* args_to_string(lisp_object* args)
         {
             needed = snprintf(NULL, 0, "%lld ", val->data.num_val) + 1;
             tmp = malloc(needed);
-            if (tmp) snprintf(tmp, needed, "%lld ", val->data.num_val);
+            if (tmp)
+            {
+                snprintf(tmp, needed, "%lld ", val->data.num_val);
+            }
         }
         else if (val->type == LISP_SYMB)
         {
             needed = snprintf(NULL, 0, "%s ", val->data.str.chars) + 1;
             tmp = malloc(needed);
-            if (tmp) snprintf(tmp, needed, "%s ", val->data.str.chars);
+            if (tmp)
+            {
+                snprintf(tmp, needed, "%s ", val->data.str.chars);
+            }
         }
         else if (val->type == LISP_NIL)
         {
@@ -44,7 +51,10 @@ static char* args_to_string(lisp_object* args)
         {
             needed = snprintf(NULL, 0, "%p ", (void*)val) + 1;
             tmp = malloc(needed);
-            if (tmp) snprintf(tmp, needed, "%p ", (void*)val);
+            if (tmp)
+            {
+                snprintf(tmp, needed, "%p ", (void*)val);
+            }
         }
 
         if (tmp == NULL) 
@@ -58,7 +68,12 @@ static char* args_to_string(lisp_object* args)
         {
             size *= 2;
             char* new_buf = realloc(buf, size);
-            if (new_buf == NULL) { free(buf); free(tmp); return NULL; }
+            if (new_buf == NULL) 
+            { 
+                free(buf); 
+                free(tmp); 
+                return NULL; 
+            }
             buf = new_buf;
         }
 
@@ -179,7 +194,12 @@ static lisp_object* ifelse(lisp_object* args, Hash* table)
 
     lisp_object* res = eval(cond, table);
 
-    if (res == NULL || (res->type == LISP_BOOL && res->data.bool_val == 0))
+    if (res == NULL)
+    {
+        return NULL;
+    }
+
+    if (res->type == LISP_NIL || (res->type == LISP_BOOL && res->data.bool_val == 0))
     {
         if (second == NULL)
         {
@@ -403,7 +423,7 @@ static lisp_object* call_func(lisp_object* func, lisp_object* args, Hash* table)
     if (func->data.func.user.ismemo)
     {
         key = args_to_string(ev);
-        lisp_object* cached = get_Hash(func->data.func.user.memo, key_copy);
+        lisp_object* cached = get_Hash(func->data.func.user.memo, key);
         if (cached != NULL)
         {
             free(key);
@@ -436,7 +456,7 @@ static lisp_object* call_func(lisp_object* func, lisp_object* args, Hash* table)
 
     if (func->data.func.user.ismemo && res != NULL)
     {
-        int r = put_Hash(func->data.func.user.memo, key_copy, res);
+        int r = put_Hash(func->data.func.user.memo, key, res);
         if (r == 0)
         {
             fprintf(stderr, "ERROR: not enough memory to do memoization :(\n");
@@ -482,6 +502,66 @@ static lisp_object* case_or(lisp_object* args, Hash* table)
         cur = cur->data.cons.cdr;
     }
     return res;
+}
+
+static lisp_object* case_map(lisp_object* args, Hash* table)
+{
+    lisp_object* func_expr = args->data.cons.car;
+    lisp_object* list_expr = cons_sec(args);
+    lisp_object* third = cons_third(args);
+
+    if (func_expr == NULL || list_expr == NULL || third != NULL)
+    {
+        fprintf(stderr, "ERROR: map expects 2 arguments :(\n");
+        return NULL;
+    }
+
+    lisp_object* func = eval(func_expr, table);
+    lisp_object* list = eval(list_expr, table);
+
+    if (func == NULL || func->type != LISP_FUNC)
+    {
+        fprintf(stderr, "ERROR: map expects a function :(\n");
+        return NULL;
+    }
+    if (list == NULL || (list->type != LISP_CONS && list->type != LISP_NIL))
+    {
+        fprintf(stderr, "ERROR: map expects a list :(\n");
+        return NULL;
+    }
+
+    lisp_object* result = create_nil();
+    lisp_object* last = NULL;
+    lisp_object* cur = list;
+
+    while (cur != NULL && cur->type == LISP_CONS)
+    {
+        lisp_object* call_args = create_cons(cur->data.cons.car, create_nil());
+        lisp_object* val = call_func(func, call_args, table);
+        del_point(call_args);
+
+        if (val == NULL) 
+        { 
+            del_point(result); 
+            return NULL; 
+        }
+
+        lisp_object* cell = create_cons(val, create_nil());
+        if (last == NULL) 
+        { 
+            result = cell; 
+            last = cell; 
+        }
+        else 
+        { 
+            last->data.cons.cdr = cell; 
+            last = cell; 
+        }
+
+        cur = cur->data.cons.cdr;
+    }
+
+    return result;
 }
 
 lisp_object* eval(lisp_object* expr, Hash* table)
@@ -637,6 +717,11 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                 else if (strcmp(oper->data.str.chars, "or") == 0)
                 {
                     res = case_or(expr->data.cons.cdr, table);
+                    break;
+                }
+                else if (strcmp(oper->data.str.chars, "map") == 0)
+                {
+                    res = case_map(expr->data.cons.cdr, table);
                     break;
                 }
             }

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-static void skip_spaces(const char **p)
+void skip_spaces(const char **p)
 {
     while (**p == ' ' || **p == '\t' || **p == '\n' || **p == '\r')
     {
@@ -28,6 +28,7 @@ static lisp_object* parse_cons(const char* p, const char** remaind)
         return NULL;
     }
 
+    skip_spaces(&p);
     // work with . only if '(a . b), not just (a . b)
     if (*p == '.')
     {
@@ -54,6 +55,7 @@ static lisp_object* parse_cons(const char* p, const char** remaind)
 
     lisp_object* cdr = parse_cons(p, &p);
     *remaind = p;
+
     return create_cons(car, cdr);
 }
 
@@ -245,11 +247,4 @@ lisp_object* parse_object(const char* p, const char** remaind)
         obj = parse_symbol(p, remaind);
     }
     return obj;
-}
-
-// CHANGE WHEN NEED TO WORK WITH FILES !!!
-lisp_object* parse_expr(const char *p)
-{
-    const char* remaind;
-    return parse_object(p, &remaind);
 }
