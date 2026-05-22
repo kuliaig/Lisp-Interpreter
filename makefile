@@ -35,7 +35,8 @@ reader.o: reader.c reader.h object.h hash.h
 	$(CC) $(CFLAGS) -c reader.c
 
 clean:
-	rm -f *.o lisp.exe
+	-rm -f *.o lisp.exe *.dll 2>nul
+	-del /q *.o lisp.exe *.dll 2>nul
 
 vectorlib.dll: vectorlib.c array.c object.c hash.c library.h
 	$(CC) -shared vectorlib.c array.c object.c hash.c -o vectorlib.dll -I.
