@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "object.h"
 #include "parcer.h"
 #include "printer.h"
@@ -7,13 +8,76 @@
 #include "eval.h"
 #include "func.h"
 #include "reader.h"
+#include "library.h"
+#ifdef _WIN32
+#include <windows.h>
+#else 
+#include <dlfcn.h>
+#endif
+
+Hash* table = NULL;
+
+lisp_object* load_plugin(lisp_object* args)
+{
+    if (args == NULL || args->type != LISP_CONS)
+    {
+        fprintf(stderr, "ERROR: load-plugin expects 1 argument :(\n");
+        return NULL;
+    }
+
+    const char* path = args->data.cons.car->data.str.chars;
+
+#ifdef _WIN32
+    HMODULE handle = LoadLibraryA(path);
+#else
+    void* handle = dlopen(path, RTLD_NOW);
+#endif 
+
+    if (handle == NULL)
+    {
+        fprintf(stderr, "ERROR: cannot load plugin %s :(\n", path);
+        return NULL;
+    }
+
+#ifdef _WIN32
+    plugin* (*init)(void) = (void*)GetProcAddress(handle, "init_plugin");
+#else
+    plugin* (*init)(void) = dlsym(handle, "init_plugin");
+#endif 
+
+    if (init == NULL)
+    {
+        fprintf(stderr, "ERROR: plugin has no init_plugin, please add it :(\n");
+        return NULL;
+    }
+
+    plugin* funcs = init();
+    for (int i = 0; funcs[i].name != NULL && funcs[i].func != NULL; i++)
+    {
+        put_Hash(table, funcs[i].name, create_inside(funcs[i].func, funcs[i].name));
+    }
+
+    return create_void();
+}
+
 
 void help()
 {
     printf("Usage: lisp.exe [options] file...\n");
     printf("Options:\n");
-    printf("  --help  Display this information");
-    printf("  --help  Display this information"); // CHANGE WHEN FILE
+    printf("  --help        Display this information\n");
+    printf("  open <file>   Execute script from file\n");
+    printf("Built-in special forms:\n");
+    printf("  define define-no-mem lambda lambda no-mem\n");
+    printf("  if quote set! and or map \n");
+    printf("Built-in functions:\n");
+    printf("  + - * / = < > <= >= not\n");
+    printf("  car cdr cons caar cadr cdar cddr\n");
+    printf("  null? pair? list? number? symbol? boolean?\n");
+    printf("  string? procedure? vector?zero? positive? negative?\n");
+    printf("  load-plugin \"plugin\"\n");
+    printf("Plugin API:\n");
+    printf("  See liblisp.h, README.md and an example arraylib.c\n");
 }
 
 int main(int argc, char** argv)
@@ -87,11 +151,13 @@ int main(int argc, char** argv)
         }
     }
 
-    Hash* table = create_Hash(NULL);
+    table = create_Hash(NULL);
 
     module_math(table);
     module_cons(table);
     module_check(table);
+    put_Hash(table, "load-plugin", create_inside(load_plugin, "load-plugin"));
+    
 
     while (1)
     {

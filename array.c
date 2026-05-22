@@ -11,7 +11,7 @@ int arr_length(lisp_object* arr)
     return -1;
 }
 
-static int arr_enlarge(lisp_object* arr, int new_capacity)
+int arr_enlarge(lisp_object* arr, int new_capacity)
 {
     if (arr == NULL || arr->type != LISP_ARR || new_capacity <= arr->data.arr.capacity)
     {
@@ -61,7 +61,7 @@ int arr_set(lisp_object* arr, int ind, lisp_object* obj)
 
 lisp_object* arr_get(lisp_object* arr, int ind)
 {
-    if (arr == NULL ||  arr->type != LISP_ARR || ind >= arr->data.arr.size || ind < 0)
+    if (arr == NULL || arr->type != LISP_ARR || ind >= arr->data.arr.size || ind < 0)
     {
         return NULL;
     }

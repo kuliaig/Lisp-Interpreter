@@ -56,7 +56,7 @@ static void print_cons(lisp_object* obj)
 static void print_arr(lisp_object* obj)
 {
     printf("#(");
-    int len = arr_length(obj);
+    int len = obj->data.arr.size;
     if (len > 0)
     {
         print_object(obj->data.arr.elements[0]);

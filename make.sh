@@ -1,1 +1,0 @@
-gcc main.c array.c eval.c hash.c object.c parcer.c printer.c func.c reader.c -o lisp -Wall -Wextra

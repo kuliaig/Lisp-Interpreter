@@ -1,6 +1,5 @@
 #pragma once 
 #include "object.h"
-#include "array.h"
 
 // skip spaces in str
 void skip_spaces(const char** p);

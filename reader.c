@@ -260,8 +260,11 @@ char* read_input(Hash* table)
 		}
 		else
 		{
-			res[pos++] = c;
-			putchar(c);
+			if (c >= 32 && c <= 126)
+			{
+				res[pos++] = c;
+				putchar(c);
+			}
 		}
 		
 		c = _getch();
