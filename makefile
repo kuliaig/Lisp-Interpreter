@@ -1,3 +1,5 @@
+all: lisp vectorlib.dll
+
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 OBJS = main.o object.o parcer.o printer.o hash.o array.o eval.o func.o reader.o

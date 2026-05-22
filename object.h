@@ -4,6 +4,7 @@ typedef struct Hash Hash;
 typedef struct lisp_object lisp_object;
 void new_point_Hash(Hash* table);
 void del_point_Hash(Hash* table);
+Hash* create_Hash(Hash* Parent);
 
 typedef enum lisp_type 
 {
@@ -119,4 +120,4 @@ lisp_object* create_inside(lisp_object* (*c_func)(lisp_object* args), const char
 lisp_object* create_user(lisp_object* args, lisp_object* body, struct Hash* table, int ismemo);
 
 // create lisp object with type VOID (needs for empty str)
-lisp_object* create_nil();
+lisp_object* create_void();

@@ -1,4 +1,5 @@
 #include "parcer.h"
+#include "array.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -668,8 +668,6 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                 {
                     lisp_object* args = expr->data.cons.cdr;
                     lisp_object* first = args->data.cons.car;
-                    lisp_object* val_expr = cons_sec(args);
-                    lisp_object* third = cons_third(args);
 
                     if (first != NULL && first->type == LISP_CONS)
                     {
@@ -697,7 +695,6 @@ lisp_object* eval(lisp_object* expr, Hash* table)
                 else if (strcmp(oper->data.str.chars, "set!") == 0)
                 {
                     lisp_object* args = expr->data.cons.cdr;
-                    lisp_object* var = args->data.cons.car;
                     lisp_object* val_expr = cons_sec(args);
                     lisp_object* third = cons_third(args);
                     lisp_object* value = eval(val_expr, table);

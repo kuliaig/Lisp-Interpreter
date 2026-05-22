@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "library.h"
 #include "array.h"
+#include "object.h"
 
 static lisp_object* cons_third(lisp_object* cons)
 {
