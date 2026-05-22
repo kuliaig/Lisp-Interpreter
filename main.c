@@ -65,8 +65,12 @@ void help()
 {
     printf("Usage: lisp.exe [options] file...\n");
     printf("Options:\n");
-    printf("  --help        Display this information\n");
-    printf("  open <file>   Execute script from file\n");
+    printf("  --help                Display this information\n");
+    printf("  open <file>           Execute script from file\n");
+    printf("Examples:\n");
+    printf("  .\\lisp                  Start interactive REPL\n");
+    printf("  .\\lisp open file.scm    Execute script from file\n");
+    printf("  .\\lisp --help           Display this information\n");
     printf("Built-in special forms:\n");
     printf("  define define-no-mem lambda lambda no-mem\n");
     printf("  if quote set! and or map \n");
@@ -149,6 +153,9 @@ int main(int argc, char** argv)
             del_point_Hash(table);
             return 0;
         }
+
+        printf("Bad arguments, please use .\\lisp --help :)\n");
+        return 1;
     }
 
     table = create_Hash(NULL);
