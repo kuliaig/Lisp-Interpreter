@@ -8,11 +8,11 @@
 (set! x 20)
 x
 
+"hello world"
+
 '(1 2 3)
 (car '(1 2 3))
 (cdr '(1 2 3))
 
 (if (= 5 5) "yes" "no")
 (if #f 1 2)
-
-"hello world"

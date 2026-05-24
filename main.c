@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string.h>
 #include "object.h"
 #include "parcer.h"
@@ -17,7 +18,13 @@
 
 Hash* table = NULL;
 
-lisp_object* load_plugin(lisp_object* args)
+static void bye(int sign)
+{
+    printf("\nBye-bye! :)\n");
+    exit(0);
+}
+
+static lisp_object* load_plugin(lisp_object* args)
 {
     if (args == NULL || args->type != LISP_CONS)
     {
@@ -61,7 +68,7 @@ lisp_object* load_plugin(lisp_object* args)
 }
 
 
-void help()
+static void help()
 {
     printf("Usage: lisp.exe [options] file...\n");
     printf("Options:\n");
@@ -91,6 +98,7 @@ void help()
 
 int main(int argc, char** argv)
 {
+    signal(SIGINT, bye);
     if (argc >= 2)
     {
         if (strcmp(argv[1], "--help") == 0)
@@ -148,9 +156,12 @@ int main(int argc, char** argv)
                 { 
                     print_object(res); 
                     printf("\n"); 
-                    del_point(res); 
                 }
                 del_point(obj);
+                if (res != obj)
+                {
+                    del_point(obj);
+                }
                 p = rem;
                 skip_spaces(&p);
             }
@@ -207,7 +218,10 @@ int main(int argc, char** argv)
                 }
                 del_point(res);
             }
-            del_point(obj);
+            if (res != obj)
+            {
+                del_point(obj);
+            }
 
             p = rem;
             skip_spaces(&p);

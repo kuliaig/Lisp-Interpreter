@@ -233,7 +233,7 @@ char* read_input(Hash* table)
 				printf("\n:..> ");
 			}
 		}
-		else if (c == '\b')
+		else if (c == '\b' || c == 127)
 		{
 			if (pos > line)
 			{	
@@ -247,7 +247,7 @@ char* read_input(Hash* table)
 				{
 					brackets++;
 				}
-				else if (res[pos] == '"')
+				else if (res[pos] == '\"')
 				{
 					quotes ^= 1;
 				}
