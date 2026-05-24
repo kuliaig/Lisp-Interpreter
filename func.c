@@ -679,7 +679,6 @@ static lisp_object* check_list(lisp_object* args)
 		return NULL;
 	}
 
-	int res = 1;
 	while (arg != NULL && arg->type == LISP_CONS)
 	{
 		arg = arg->data.cons.cdr;

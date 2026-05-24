@@ -22,13 +22,27 @@ Studying project: interpreter Scheme-like language with implementation of basic 
 
 ## Build
 
+### Windows 
+
 mingw32-make
 
+### Linux
+
+make
+
 ## Launch
+
+### Windows 
 
 .\lisp               # REPL
 .\lisp --help        # Help (you can watch there all functions and special forms)
 .\lisp open test.scm # Run the script
+
+### Linux
+
+./lisp               # REPL
+./lisp --help        # Help (you can watch there all functions and special forms)
+./lisp open test.scm # Run the script
 
 ## Plugin API
 

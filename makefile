@@ -39,4 +39,4 @@ clean:
 	-del /q *.o lisp.exe *.dll 2>nul
 
 vectorlib.dll: vectorlib.c array.c object.c hash.c library.h
-	$(CC) -shared vectorlib.c array.c object.c hash.c -o vectorlib.dll -I.
+	$(CC) -shared -fPIC vectorlib.c array.c object.c hash.c -o vectorlib.dll -I.

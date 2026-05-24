@@ -2,7 +2,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
 #include <conio.h>
+#define GETCH _getch
+#else
+#include <termios.h>
+#include <unistd.h>
+
+static int GETCH(void)
+{
+	struct termios old, new;
+	tcgetattr(STDIN_FILENO, &old);
+	new = old;
+	new.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &new);
+	int c = getchar();
+	tcsetattr(STDIN_FILENO, TCSANOW, &old);
+	return c;
+}
+#endif
 
 static int was_tab = 0;
 
@@ -136,7 +154,7 @@ static void autotab(Hash* table, const char* prefix, int preflen, char* buf, int
 char* read_input(Hash* table)
 {
 	printf(":> ");
-	int c = _getch();
+	int c = GETCH();
 	int brackets = 0;
 	int quotes = 0;
 	int pos = 0;
@@ -267,6 +285,6 @@ char* read_input(Hash* table)
 			}
 		}
 		
-		c = _getch();
+		c = GETCH();
 	}
 }

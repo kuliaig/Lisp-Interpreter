@@ -68,9 +68,14 @@ void help()
     printf("  --help                Display this information\n");
     printf("  open <file>           Execute script from file\n");
     printf("Examples:\n");
+    printf(" WINDOWS:\n");
     printf("  .\\lisp                  Start interactive REPL\n");
     printf("  .\\lisp open file.scm    Execute script from file\n");
     printf("  .\\lisp --help           Display this information\n");
+    printf(" LINUX:\n");
+    printf("  ./lisp                  Start interactive REPL\n");
+    printf("  ./lisp open file.scm    Execute script from file\n");
+    printf("  ./lisp --help           Display this information\n");
     printf("Built-in special forms:\n");
     printf("  define define-no-mem lambda lambda no-mem\n");
     printf("  if quote set! and or map \n");
