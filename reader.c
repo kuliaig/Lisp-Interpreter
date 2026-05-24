@@ -2,16 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #ifdef _WIN32
 #include <conio.h>
 #define GETCH _getch
+
+void mode()
+{ 
+	return;
+}
+
 #else
 #include <termios.h>
 #include <unistd.h>
 
+struct termios old, new;
+
+void mode()
+{
+	tcsetattr(STDIN_FILENO, TCSANOW, &old);
+}
+
 static int GETCH(void)
 {
-	struct termios old, new;
 	tcgetattr(STDIN_FILENO, &old);
 	new = old;
 	new.c_lflag &= ~(ICANON | ECHO);
@@ -20,6 +33,7 @@ static int GETCH(void)
 	tcsetattr(STDIN_FILENO, TCSANOW, &old);
 	return c;
 }
+
 #endif
 
 static int was_tab = 0;

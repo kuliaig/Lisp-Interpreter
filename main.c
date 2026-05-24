@@ -20,6 +20,7 @@ Hash* table = NULL;
 
 static void bye(int sign)
 {
+    mode();
     printf("\nBye-bye! :)\n");
     exit(0);
 }
