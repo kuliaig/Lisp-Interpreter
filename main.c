@@ -157,7 +157,6 @@ int main(int argc, char** argv)
                     print_object(res); 
                     printf("\n"); 
                 }
-                del_point(obj);
                 if (res != obj)
                 {
                     del_point(obj);
